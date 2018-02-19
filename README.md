@@ -1,5 +1,6 @@
-# Environment: Windows 10, jdk-9.0.1
+﻿# Environment: Windows 10, jdk-9.0.1
 # This program uses Stanford Parser which is released on 2017-06-09.
+# You need to move ejml-0.23.jar and stanford-parser.jar and stanford-parser-3.8.0-models.jar file to src directory.
 # how to execute the code on command line interface:
     1. move working directory to src
     2. compile the code with javac -cp ejml-0.23.jar;stanford-parser.jar;stanford-parser-3.8.0-models.jar; -d . zhsh/*.java

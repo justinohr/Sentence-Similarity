@@ -8,7 +8,6 @@ import java.util.ArrayList;
 
 
 public class ZTree {
-
 	Node root = new Node();
 	// function l() which gives the leftmost child
 	ArrayList<Integer> l = new ArrayList<Integer>();
@@ -17,12 +16,10 @@ public class ZTree {
 	// list of the labels of the nodes used for node comparison
 	ArrayList<String> labels = new ArrayList<String>();
 
-	/* cost for each operations */
-	private static final int DEFAULT_INSERT = 4;
-	private static final int DEFAULT_DELETE = 4;
+	private static final int DEFAULT_INSERT = 1;
+	private static final int DEFAULT_DELETE = 1;
 	private static final int DEFAULT_RELABEL = 3;
 
-	/* count tokens to find longer sentence */
 	public static int ntoken = 0;
 
 	// the following constructor handles preorder notation. E.g., f(a b(c))
@@ -209,25 +206,67 @@ public class ZTree {
 		return forestdist[i][j];
 	}
 
-	/* matchedChar : for give different cost to each node ,,, par : (label of the two nodes), ret : num_matchedCh */
-	public static int matchedChar(String word1, String word2) {
 
-		int matched = 0;
+	// string edit distance par:string, string ret:(int)edit_dist
+	public static int minDistance(String word1, String word2) {
+	int len1 = word1.length();
+	int len2 = word2.length();
+ 
+	// len1+1, len2+1, because finally return dp[len1][len2]
+	int[][] dp = new int[len1 + 1][len2 + 1];
 
-		for (int i = 0; i < word1.length(); i++){
-			char c1 = word1.charAt(i);
-			/* decrease cost if it starts with N, V, W, P */
-			if (i == 0 && (c1 == 'N' || c1 == 'V' || c1 == 'W' || c1 == 'P')){
-				for (int j = 0; j < word2.length(); j++){
-					char c2 = word2.charAt(j);
-
-					if (c1 == c2) {
-						matched++;
-						break;
-					}
-				}	
+ 
+	for (int i = 0; i <= len1; i++) {
+		dp[i][0] = i;
+	}
+ 
+	for (int j = 0; j <= len2; j++) {
+		dp[0][j] = j;
+	}
+ 
+	//iterate though, and check last char
+	for (int i = 0; i < len1; i++) {
+		char c1 = word1.charAt(i);
+		for (int j = 0; j < len2; j++) {
+			char c2 = word2.charAt(j);
+ 
+			//if last two chars equal
+			if (c1 == c2) {
+				//update dp value for +1 length
+				
+				dp[i + 1][j + 1] = dp[i][j];
+			} else {
+				int replace = dp[i][j] + 1;
+				int insert = dp[i][j + 1] + 1;
+				int delete = dp[i + 1][j] + 1;
+ 
+				int min = replace > insert ? insert : replace;
+				min = delete > min ? min : delete;
+				dp[i + 1][j + 1] = min;
 			}
 		}
+	}
+	return dp[len1][len2];
+	}
+
+	public static int matchedChar(String word1, String word2) {
+
+		int len1 = word1.length();
+		int len2 = word2.length();
+		int matched = 0;
+
+		for (int i=0; i<len1; i++){
+			char c1 = word1.charAt(i);
+			for (int j=0; j<len2; j++){
+				char c2 = word2.charAt(j);
+
+				if (c1 == c2) {
+					matched++;
+					break;
+				}
+			}
+		}
+
 		return matched;
 	}
 }

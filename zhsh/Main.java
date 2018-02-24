@@ -14,15 +14,14 @@ import edu.stanford.nlp.trees.*;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 
 
-/* how to compile in windows command line : javac -cp ejml-0.23.jar;stanford-parser.jar;stanford-parser-3.8.0-models.jar; -d . zhsh/*.java 
-   how to execute in windows command line : java -cp ejml-0.23.jar;stanford-parser.jar;stanford-parser-3.8.0-models.jar; zhsh.Main edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz testcase.txt
+/* usage : javac -cp ejml-0.23.jar:stanford-parser.jar:stanford-parser-3.8.0-models.jar: -d . zhsh/*.java 
+         : java -cp ejml-0.23.jar:stanford-parser.jar:stanford-parser-3.8.0-models.jar: zhsh.Main edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz testcase.txt
 */
 public class Main {
 
 	public static int length1;
 	public static int length2;
 	int j, k;
-	static int nSubtrees;
 
 	public static void main(String[] args) throws IOException {
 
@@ -39,9 +38,8 @@ public class Main {
 			ArrayList<String> subtrees1 = new ArrayList<String>();
 			ArrayList<String> subtrees2 = new ArrayList<String>();
 
-			ArrayList<String> subset1 = new ArrayList<String>();
-			ArrayList<String> subset2 = new ArrayList<String>();
-
+			/*	The program will open the file whose name is same as the second argument
+			 *	Following block will make a parse tree using Stanford Parser and my own defined function: dfs. */
 			System.out.println("input file name : " + args[i]);
 			System.out.println("--------------------------------");
 			System.out.println();
@@ -77,11 +75,15 @@ public class Main {
 				str.add(nSentence == 1? dfs(parse, parsed, arr1) : dfs(parse, parsed, arr2));
 			}
 
+			/*	Parse trees are printed on following two lines*/
 			System.out.println();
 			System.out.println("Parse tree for the first sentence  : " + str.get(0));
 			System.out.println("Parse tree for the second sentence : " + str.get(1));
 			System.out.println();
 
+			/*	Getting similarity between two sentence.
+			 *	Similarity is defined as (1 - (tree edit distance between two parse trees) / (tree edit distance between the larger tree and a tree which has only temp node)) * 100
+			 */
 			String temp = "temp";
 			ZTree tree1 = new ZTree(str.get(0));
 			length1 = ZTree.ntoken;
@@ -105,67 +107,36 @@ public class Main {
 			System.out.println("Similarity : " 
 				+ String.format("%.1f", similarity) + "%");
 
-
 			/* new lines for next testcase. */
 			System.out.println();
 			System.out.println();
-
-			
-			/*testing tokenized strings
-			for(String arr : arr1)
-				System.out.println(arr);
-
-			System.out.println();
-
-			for(String arr : arr2)
-				System.out.println(arr);*/
-
+      
         	/* print all the rooted sub-trees */
-
         	System.out.println("--------------------------------------");
         	System.out.println("Rooted sub-trees of the first sentence");
-        	System.out.println(" => " + str.get(0));
+        	System.out.println(str.get(0));
         	System.out.println("--------------------------------------");
-        	enumSubtrees(arr1, subtrees1);
-       	 	System.out.println("sub-trees are enumarated.");
-       	 	System.out.println("--------------------------------------");
- 			System.out.println();      	 	
-
-			int count = 0;
-
-			for(String subtree_temp : subtrees1){
-
-				++count;
-				System.out.println(count + " subtree : " + subtree_temp);
-			}
-
-       	 	System.out.println("--------------------------------------");
-        	System.out.println("Rooted sub-trees of the second sentence");
-        	System.out.println(" => " + str.get(1));
-        	System.out.println("--------------------------------------");
-        	enumSubtrees(arr2, subtrees2);
-       	 	System.out.println("sub-trees are enumarated.");
+       	 	SubtreeFactory.enumSubtrees(arr1, subtrees1);
        	 	System.out.println("--------------------------------------");
  			System.out.println();      	 	
 			System.out.println();
 
-			count = 0;
-
-			for(String subtree_temp : subtrees2){
-
-				++count;
-				System.out.println(String.format("%3d", count) + " subtree : " + subtree_temp);
-			}
+       	 	System.out.println("---------------------------------------");
+        	System.out.println("Rooted sub-trees of the second sentence");
+        	System.out.println(str.get(1));
+        	System.out.println("---------------------------------------");
+       	 	SubtreeFactory.enumSubtrees(arr2, subtrees2);
+       	 	System.out.println("---------------------------------------");
+       		System.out.println();
 
        		/* find core kernel */
 
-       		/*String coreSubtree1 = "";
+       		String coreSubtree1 = "";
        		String coreSubtree2 = "";
 
        		for (String s1 : subtrees1){
-       			
        			for (String s2 : subtrees2){
-       				
+
 					ZTree testtree1 = new ZTree(s1);
 					length1 = ZTree.ntoken;
 					System.out.println("subtree1 : " + s1);
@@ -196,8 +167,11 @@ public class Main {
 					System.out.println();
        			}
        		}
-
-
+       		ArrayList<String> s1 = new ArrayList<String>();
+       		ArrayList<String> s2 = new ArrayList<String>();
+       		System.out.println("Number of subtrees: " + SubtreeFactory.enumSubtrees(arr1, s1));
+       		System.out.println("Number of subtrees: " + SubtreeFactory.enumSubtrees(arr2, s2));
+       		System.out.println();
 			System.out.println("=========================");
 			System.out.println("  ->   Core kernel   <-  ");
 			System.out.println("=========================");
@@ -209,7 +183,7 @@ public class Main {
 			System.out.println("Core kernel of the second sentence");
 			System.out.println("----> " + coreSubtree2);
 			System.out.println();
-			System.out.println();*/
+			System.out.println();
 		}
 	}
 
@@ -255,120 +229,110 @@ public class Main {
 			return parsed;
 	}
 
-	/* enumarate the subtrees ,,,, */
     private static void enumSubtrees(ArrayList<String> arr, ArrayList<String> subtrees){
 
-    	int i, j, k, num, exception_offset, exception2_counter;
+    	int i, j, k, num, nSubtrees, exception_offset, exception2_counter;
     	int len = arr.size();
     	boolean exception1, exception2;
-    	num = 0;
+    	num = nSubtrees = 0;
     	ArrayList<String> subtree;
 
+    	/* ROOT(S( ,,,,,, PERIOD)) is obvious */
+    	for (k=4; k<len-4; k++){
+    		if (isTargetNode(arr.get(k)))
+    			for (i = k; i < len-4; i++){
+
+    				j = exception_offset = exception2_counter = 0; 
+    				exception1 = exception2 = false;
+
+    				subtree = new ArrayList<String>();
+
+    				if (isTargetNode(arr.get(i))){ 
+
+    					System.out.println("target value : " + arr.get(i));
+
+    					/* every cases except the three special cases are covered by 
+    						the algorithm */
+
+    					if (arr.get(i-1).equals("(") && arr.get(i+1).equals(")")){
+    						/*         simple exception case 
+                   			     have to delete one more ( at the left
+             		         ----------------------------------------------
+            		                for example : ,,,,(node),,,,,,  
+    						*/
+    						exception_offset++;
+    					}
+
+    					if (arr.get(i-1).equals(" ") && arr.get(i+1).equals(")")){
+    						/*           exception case 1
+    						     not have to delete one more ) at the right
+    						   ----------------------------------------------
+    						         for example : ,,,,,( ,,,,node),,,,,
+    						 */
+    						exception_offset++;
+    						exception1 = true;
+    					}
+
+    					if (arr.get(i-1).equals(" ") && arr.get(i+1).equals("(")){
+    						/*               exception case 2
+    						     have to delete one more blank at the rigth
+    						   ----------------------------------------------
+    						      for example : ,,,,,( ,,,,node(,,,)),,,,
+    						 */
+    						exception_offset++;
+    						exception2 = true;
+    						exception2_counter = i;
+    						while (arr.get(exception2_counter) != ")"){
+    							exception2_counter++;
+    			  			}
+    					}
+
+    					/* space casting */
+    					for (; j < i-exception_offset; j++) {
+    						System.out.print(arr.get(j));
+    						subtree.add(arr.get(j));
+    					}
+
+    					/* for dealing with exception 1 */
+    					if (exception1) {
+    						System.out.print(")");
+    						subtree.add(")");
+    					}
+
+    					/* skip one blank if required */
+    					j += (exception_offset+1);
     	
-
-    	String temp = String.join("", arr);
-
-    	if(!subtrees.contains(temp) && !temp.contains("()")){
-
-    		nSubtrees++;
-    		subtrees.add(temp);
-    	}
-
-    	
-    	/* ROOT( ,,,,,, ) is obvious ,,, so skip 'ROOT' & the last ')' */
-    	for (i = 1; i < len-1; i++){
-
-    		j = exception_offset = exception2_counter = 0; 
-   			exception1 = exception2 = false;
-
-   			subtree = new ArrayList<String>();
-
-   			if (isTargetNode(arr.get(i))){ 
-
-    			//System.out.println("target value : " + arr.get(i));
-
-    			/* every cases except the three special cases are covered by 
-   					the algorithm */
-
-   				if (arr.get(i-1).equals("(") && arr.get(i+1).equals(")")){
-   				/*      	   simple exception case 
-          		    	 have to delete one more ( at the left
-                   	 ----------------------------------------------
-       		               	for example : ,,,,(node),,,,,,  
-    			*/
-    				exception_offset++;
-   				}
-
-    			if (arr.get(i-1).equals(" ") && arr.get(i+1).equals(")")){
-    			/*  	         exception case 1
-    			     not have to delete one more ) at the right
-    			   ----------------------------------------------
-   					     for example : ,,,,,( ,,,,node),,,,,
-   				 */
-    				exception_offset++;
-    				exception1 = true;
-    			}
-
-    			if (arr.get(i-1).equals(" ") && arr.get(i+1).equals("(")){
-    			/*               exception case 2
-    			     have to delete one more blank at the rigth
-   				   ----------------------------------------------
-   				      for example : ,,,,,( ,,,,node(,,,)),,,,
-   				 */
-    				exception_offset++;
-    				exception2 = true;
-    				exception2_counter = i;
-    				while (arr.get(exception2_counter) != ")"){
-    					exception2_counter++;
-   					}
-   				}
-
-    			/* space casting */
-    			for (; j < i-exception_offset; j++) {
-    				//System.out.print(arr.get(j));
-    				subtree.add(arr.get(j));
-   				}
-    			
-    			/* for dealing with exception 1 */
-    			if (exception1) {
-    				//System.out.print(")");
-    				subtree.add(")");
-    			}
-
-    			/* skip one blank if required */
-    			j += (exception_offset+1);
-    	
-    			/* skip the target node and it's children */
-    			if (j > 0 && arr.get(j).equals("(")) num++;
+    					/* skip the target node and it's children */
+    					if (j > 0 && arr.get(j).equals("(")) num++;
     		
-   				while (num != 0){
+    					while (num != 0){
 
-    				j++;
+    						j++;
 
-   					if (arr.get(j).equals("(")) num++;
-   					else if (arr.get(j).equals(")")) num--;
+    						if (arr.get(j).equals("(")) num++;
+    						else if (arr.get(j).equals(")")) num--;
     				
-   					if (num == 0 && arr.get(j+1).equals(" ") && !exception2) j++;
-   				}
+    						if (num == 0 && arr.get(j+1).equals(" ") && !exception2) j++;
+    					}
 
-   				/* print remain things */
-   				for (++j; j < len; j++) {
-   					//System.out.print(arr.get(j));
-   					subtree.add(arr.get(j));
-   				}
+    					/* print remain things */
+    					for (++j; j < len; j++) {
+    						System.out.print(arr.get(j));
+    						subtree.add(arr.get(j));
+    					}
     		
-    			String result = String.join("", subtree);
 
-    			if(!subtrees.contains(result) && !result.contains("()")){
+    					String result = String.join("", subtree);
 
-    				nSubtrees++;
-    				subtrees.add(result);
-    				enumSubtrees(subtree, subtrees);
-   				}
+    					nSubtrees++;
+
+    					subtrees.add(result);
+
+    					System.out.println();
+    			}
     		}
-    	}	
-   	}
-	
+    	}System.out.println("number of subtrees : " + nSubtrees);
+	}
 
     private static boolean isSpecial(String S){
 
@@ -378,7 +342,6 @@ public class Main {
     /* TargetNode is the node which value is not Special and root and s */
     private static boolean isTargetNode(String S){
 
-    	return !isSpecial(S) && !S.equals("ROOT");
+    	return !isSpecial(S) && !S.equals("ROOT") && !S.equals("S");
     }
-
 }
